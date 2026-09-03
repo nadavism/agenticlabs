@@ -5,7 +5,7 @@ import { ArrowDownRight, pageIcons } from '../components/Icons'
 import { FeatureBand } from '../components/FeatureBand'
 import { HeroMark } from '../components/HeroMark'
 import { SiteShell } from '../components/SiteShell'
-import { getIndustryFromSearch, routeConfig, updateIndustrySearch } from '../routing'
+import { getIndustryFromSearch, solutionRoutes, updateIndustrySearch } from '../routing'
 
 export function HomePage() {
   const location = useLocation()
@@ -38,7 +38,7 @@ export function HomePage() {
       <FeatureBand outcomes={content.outcomes} label={`${content.title} outcomes`} />
       <section className="opportunity-index" aria-label="Agentic Labs pages">
         <div className="site-container opportunity-grid">
-          {routeConfig.slice(1).map((route) => {
+          {solutionRoutes.map((route) => {
             const page = resolveContent(route.id, industry)
             const Icon = pageIcons[route.id]
             return (

@@ -14,6 +14,8 @@ export const routeConfig: Array<{ id: PageId; path: string; label: string }> = [
   { id: 'ai-diagnostic', path: '/ai-diagnostic', label: 'AI Diagnostic' },
 ]
 
+export const solutionRoutes = routeConfig.filter((route) => route.id !== 'home')
+
 const industrySet = new Set<string>(industries)
 
 export function parseIndustry(value: string | null): Industry {

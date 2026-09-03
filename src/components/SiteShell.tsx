@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { IndustrySelect } from './IndustrySelect'
+import { IndustrySelect, industryLabels } from './IndustrySelect'
+import { SolutionsMenu } from './SolutionsMenu'
 import { getIndustryFromSearch, routeConfig, updateIndustrySearch } from '../routing'
 import type { Industry, PageId } from '../types'
 
@@ -12,6 +13,7 @@ export function SiteShell({ activePage, children }: { activePage: PageId; childr
   const location = useLocation()
   const navigate = useNavigate()
   const industry = getIndustryFromSearch(location.search)
+  const overviewRoute = routeConfig[0]
 
   useEffect(() => {
     const rawIndustry = new URLSearchParams(location.search).get('industry')
@@ -54,22 +56,24 @@ export function SiteShell({ activePage, children }: { activePage: PageId; childr
       </header>
       <div className="context-bar">
         <div className="site-container context-bar__inner">
-          <nav className="opportunity-nav" aria-label="Opportunity areas">
-            {routeConfig.map((route) => (
-              <Link
-                aria-current={activePage === route.id ? 'page' : undefined}
-                className={activePage === route.id ? 'is-active' : undefined}
-                key={route.id}
-                to={buildHref(route.path, location.search, industry)}
-              >
-                {route.label}
-              </Link>
-            ))}
+          <nav className="opportunity-nav" aria-label="Primary navigation">
+            <Link
+              aria-current={activePage === overviewRoute.id ? 'page' : undefined}
+              className={activePage === overviewRoute.id ? 'is-active' : undefined}
+              to={buildHref(overviewRoute.path, location.search, industry)}
+            >
+              {overviewRoute.label}
+            </Link>
+            <SolutionsMenu
+              activePage={activePage}
+              industry={industry}
+              search={location.search}
+            />
           </nav>
         </div>
       </div>
       <p className="sr-only" aria-live="polite">
-        Content shown for {industry === 'data-centers' ? 'Data Centers' : industry[0].toUpperCase() + industry.slice(1)}
+        Content shown for {industryLabels[industry]}
       </p>
       <main id="main-content">{children}</main>
     </div>

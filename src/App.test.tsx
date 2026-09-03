@@ -109,12 +109,141 @@ describe('application route matrix', () => {
       ),
     )
     expect(select).toHaveFocus()
-    screen.getAllByRole('link', { name: 'Revenue Preservation' }).forEach((link) =>
-      expect(link).toHaveAttribute(
-        'href',
-        '/revenue-preservation?source=shared&industry=data-centers',
-      ),
+    fireEvent.click(screen.getByRole('button', { name: /open solutions menu/i }))
+    expect(
+      within(screen.getByRole('list')).getByRole('link', { name: /^Revenue Preservation/ }),
+    ).toHaveAttribute(
+      'href',
+      '/revenue-preservation?source=shared&industry=data-centers',
     )
+  })
+
+  it('shows only Overview and Solutions at the top level and preserves solution order', () => {
+    render(
+      <MemoryRouter initialEntries={['/?industry=retail&source=shared']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    )
+
+    const navigation = screen.getByRole('navigation', { name: 'Primary navigation' })
+    expect(within(navigation).getAllByRole('link')).toHaveLength(1)
+    expect(within(navigation).getByRole('link', { name: 'Overview' })).toHaveAttribute(
+      'href',
+      '/?industry=retail&source=shared',
+    )
+
+    const trigger = within(navigation).getByRole('button', { name: /open solutions menu/i })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+
+    const links = within(screen.getByRole('list')).getAllByRole('link')
+    expect(links.map((link) => link.querySelector('.solutions-menu__title')?.textContent)).toEqual([
+      'Spend Intelligence',
+      'Vendor Discovery',
+      'Revenue Preservation',
+      'Additional Revenue Capture',
+      'AI Diagnostic',
+    ])
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/spend-intelligence?industry=retail&source=shared',
+      '/vendor-discovery?industry=retail&source=shared',
+      '/revenue-preservation?industry=retail&source=shared',
+      '/additional-revenue-capture?industry=retail&source=shared',
+      '/ai-diagnostic?industry=retail&source=shared',
+    ])
+  })
+
+  it.each(routeConfig)('opens the Solutions menu from $path', (route) => {
+    const { unmount } = render(
+      <MemoryRouter initialEntries={[route.path]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /open solutions menu/i }))
+    expect(within(screen.getByRole('list')).getAllByRole('link')).toHaveLength(5)
+    unmount()
+  })
+
+  it('marks the active solution and closes after a destination is selected', async () => {
+    function LocationProbe() {
+      const location = useLocation()
+      return <output data-testid="location">{`${location.pathname}${location.search}`}</output>
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/revenue-preservation']}>
+        <AppRoutes />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
+
+    const trigger = screen.getByRole('button', { name: /open solutions menu, current section/i })
+    expect(trigger).toHaveClass('is-active')
+    fireEvent.click(trigger)
+    expect(
+      within(screen.getByRole('list')).getByRole('link', { name: /^Revenue Preservation/ }),
+    ).toHaveAttribute('aria-current', 'page')
+
+    fireEvent.click(within(screen.getByRole('list')).getByRole('link', { name: /^AI Diagnostic/ }))
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/ai-diagnostic'))
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /open solutions menu/i })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+  })
+
+  it('closes on outside pointer input', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /open solutions menu/i }))
+    expect(screen.getByRole('list')).toBeInTheDocument()
+    fireEvent.pointerDown(document.body)
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+  })
+
+  it('supports arrow-key entry, link navigation, and Escape focus restoration', async () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    )
+
+    const trigger = screen.getByRole('button', { name: /open solutions menu/i })
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+
+    const links = within(await screen.findByRole('list')).getAllByRole('link')
+    await waitFor(() => expect(links[0]).toHaveFocus())
+    fireEvent.keyDown(links[0], { key: 'ArrowDown' })
+    expect(links[1]).toHaveFocus()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
+
+  it('labels the general content state as Overview without changing its value', () => {
+    render(
+      <MemoryRouter initialEntries={['/spend-intelligence']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    )
+
+    const select = screen.getByRole('combobox', { name: /industry/i })
+    expect(select).toHaveValue('general')
+    expect(within(select).getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Overview',
+      'Manufacturing',
+      'Retail',
+      'Data Centers',
+    ])
+    expect(screen.getByText('Content shown for Overview')).toBeInTheDocument()
   })
 
   it('normalizes an explicit General industry to the base route', async () => {
