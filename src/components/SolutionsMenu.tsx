@@ -28,7 +28,15 @@ export function SolutionsMenu({
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const linkRefs = useRef<Array<HTMLAnchorElement | null>>([])
+  const pendingFocusRef = useRef<number | null>(null)
   const isSolutionActive = activePage !== 'home'
+
+  useEffect(() => {
+    if (isOpen && pendingFocusRef.current !== null) {
+      linkRefs.current[pendingFocusRef.current]?.focus()
+      pendingFocusRef.current = null
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) {
@@ -64,8 +72,12 @@ export function SolutionsMenu({
   }
 
   const openAndFocus = (index: number) => {
+    if (isOpen) {
+      linkRefs.current[index]?.focus()
+      return
+    }
+    pendingFocusRef.current = index
     setIsOpen(true)
-    window.requestAnimationFrame(() => linkRefs.current[index]?.focus())
   }
 
   const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
