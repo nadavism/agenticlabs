@@ -1,8 +1,15 @@
 import type { ChangeEvent } from 'react'
 import type { Industry } from '../types'
 
+export const industryLabels: Record<Industry, string> = {
+  general: 'Overview',
+  manufacturing: 'Manufacturing',
+  retail: 'Retail',
+  'data-centers': 'Data Centers',
+}
+
 const options: Array<{ value: Industry; label: string }> = [
-  { value: 'general', label: 'General' },
+  { value: 'general', label: industryLabels.general },
   { value: 'manufacturing', label: 'Manufacturing' },
   { value: 'retail', label: 'Retail' },
   { value: 'data-centers', label: 'Data Centers' },
