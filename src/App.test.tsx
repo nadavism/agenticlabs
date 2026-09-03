@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { AppRoutes } from './App'
 import { industries } from './types'
@@ -55,6 +55,18 @@ describe('application route matrix', () => {
     expect(band.querySelectorAll('svg')).toHaveLength(0)
     const index = screen.getByRole('region', { name: 'Agentic Labs pages' })
     expect(within(index).getAllByRole('link')).toHaveLength(5)
+    expect(screen.getAllByRole('navigation')).toHaveLength(1)
+  })
+
+  it('does not visibly render banned copy or raw route slugs', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    )
+
+    expect(container).not.toHaveTextContent('AI transformation, grounded in operations.')
+    expect(container).not.toHaveTextContent('/additional-revenue-capture')
   })
 
   it('keeps ROI out of the homepage and AI Diagnostic', () => {
@@ -121,5 +133,75 @@ describe('application route matrix', () => {
     await waitFor(() =>
       expect(screen.getByTestId('location')).toHaveTextContent('/spend-intelligence?source=shared'),
     )
+  })
+
+  it('restores page and industry state with browser back and forward navigation', async () => {
+    function HistoryControls() {
+      const location = useLocation()
+      const navigate = useNavigate()
+      return (
+        <>
+          <output data-testid="location">{`${location.pathname}${location.search}`}</output>
+          <button onClick={() => navigate(-1)}>Back</button>
+          <button onClick={() => navigate(1)}>Forward</button>
+        </>
+      )
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppRoutes />
+        <HistoryControls />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByRole('combobox', { name: /industry/i }), {
+      target: { value: 'retail' },
+    })
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/?industry=retail'))
+
+    fireEvent.click(screen.getAllByRole('link', { name: /Vendor Discovery/ })[0])
+    await waitFor(() =>
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/vendor-discovery?industry=retail',
+      ),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/?industry=retail'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Forward' }))
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/?industry=retail'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Forward' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/vendor-discovery?industry=retail',
+      ),
+    )
+  })
+
+  it.each([
+    ['/', 'Agentic Labs | Order.co'],
+    ['/spend-intelligence', 'Spend Intelligence | Order.co Agentic Labs'],
+    ['/vendor-discovery', 'Vendor Discovery | Order.co Agentic Labs'],
+    ['/revenue-preservation', 'Revenue Preservation | Order.co Agentic Labs'],
+    [
+      '/additional-revenue-capture',
+      'Additional Revenue Capture | Order.co Agentic Labs',
+    ],
+    ['/ai-diagnostic', 'AI Diagnostic | Order.co Agentic Labs'],
+  ])('sets the document title for %s', async (path, expectedTitle) => {
+    const { unmount } = render(
+      <MemoryRouter initialEntries={[path]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect(document.title).toBe(expectedTitle))
+    unmount()
   })
 })

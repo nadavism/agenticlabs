@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { resolveContent } from '../content'
 import { ArrowDownRight, pageIcons } from '../components/Icons'
@@ -10,6 +11,17 @@ export function HomePage() {
   const location = useLocation()
   const industry = getIndustryFromSearch(location.search)
   const content = resolveContent('home', industry)
+
+  useEffect(() => {
+    document.title = 'Agentic Labs | Order.co'
+    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    if (!canonical) {
+      canonical = document.createElement('link')
+      canonical.rel = 'canonical'
+      document.head.append(canonical)
+    }
+    canonical.href = '/'
+  }, [])
 
   return (
     <SiteShell activePage="home">

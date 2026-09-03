@@ -34,7 +34,7 @@ export function SiteShell({ activePage, children }: { activePage: PageId; childr
         search: updateIndustrySearch(location.search, nextIndustry),
         hash: location.hash,
       },
-      { replace: true, preventScrollReset: true },
+      { preventScrollReset: true },
     )
   }
 
@@ -72,22 +72,6 @@ export function SiteShell({ activePage, children }: { activePage: PageId; childr
         Content shown for {industry === 'data-centers' ? 'Data Centers' : industry[0].toUpperCase() + industry.slice(1)}
       </p>
       <main id="main-content">{children}</main>
-      <footer className="site-footer">
-        <div className="site-container site-footer__inner">
-          <Link className="footer-brand" to={buildHref('/', location.search, industry)}>
-            <span>Order.co</span>
-            <span className="brand-divider" aria-hidden="true" />
-            <span className="agentic-label">Agentic Labs</span>
-          </Link>
-          <nav aria-label="Footer navigation">
-            {routeConfig.slice(1).map((route) => (
-              <Link key={route.id} to={buildHref(route.path, location.search, industry)}>
-                {route.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </footer>
     </div>
   )
 }
