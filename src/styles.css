@@ -253,7 +253,7 @@ a {
   max-height: calc(100dvh - 116px);
   overflow-y: auto;
   border-bottom: 1px solid var(--line);
-  background: rgb(255 255 255 / 99%);
+  background: var(--white);
   box-shadow: 0 24px 48px rgb(5 45 35 / 14%);
   animation: menu-reveal 160ms both ease-out;
 }
